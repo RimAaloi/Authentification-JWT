@@ -31,6 +31,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String requestURI = request.getRequestURI();
+
+        // ⚠️ CORRECTION : Ignorer les endpoints d'authentification
+        if (requestURI.startsWith("/api/auth/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 🔎 Récupération du header Authorization
         String authHeader = request.getHeader("Authorization");
         String token = null;
@@ -42,12 +50,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             username = jwtService.extractUsername(token);
         }
 
-        // Vérifie si l’utilisateur n’est pas déjà authentifié
+        // Vérifie si l'utilisateur n'est pas déjà authentifié
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = myUserDetailsService.loadUserByUsername(username);
 
             if (jwtService.isTokenValid(token, userDetails.getUsername())) {
-                // Crée l’objet d’authentification
+                // Crée l'objet d'authentification
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities());
